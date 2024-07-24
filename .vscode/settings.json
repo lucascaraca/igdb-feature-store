@@ -1,0 +1,17 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+    },
+    "flake8.args": [
+        "--max-line-length=120"
+    ],
+    "workbench.colorTheme": "GitHub Dark",
+    "jupyter.notebookFileRoot": "${workspaceFolder}",
+    "jupyter.askForKernelRestart": false,
+    "editor.formatOnSave": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    "flake8.severity": {
+        "F": "Warning"
+    },
+}
