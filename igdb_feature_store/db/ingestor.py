@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Dict
+from typing import Dict, List
 import requests
 from datetime import datetime, timedelta
 
@@ -19,7 +19,7 @@ def get_twitch_token(client_id: str, client_secret: str) -> str:
     return data["access_token"]
 
 
-class Ingestor:
+class IGDBIngestor:
 
     def __init__(self, token: str, client_id: str, delay: int, path: str):
 
@@ -32,7 +32,7 @@ class Ingestor:
         self.headers = {"Client-ID": client_id, "Authorization": f"Bearer {token}"}
         self.delay_timestamp = int((datetime.now() - timedelta(days=delay)).timestamp())
 
-    def get_data(self, endpoint: str, params: Dict = {}) -> Dict:
+    def get_data(self, endpoint: str, params: Dict = {}) -> List[Dict]:
         url = f"{self.base_url}/{endpoint}"
         response = requests.get(url, headers=self.headers, params=params)
         return response.json()
@@ -53,26 +53,57 @@ class Ingestor:
 
         return True
 
-    def get_and_save(self, endpoint: str, params: Dict) -> Dict:
-        data = self.get_data(endpoint, params)
-        self.save_data(data, endpoint)
+    def get_and_save(self, endpoint: str, params: Dict) -> List[Dict]:
+        try:
+            data = self.get_data(endpoint, params)
+            self.save_data(data, endpoint)
+
+        except Exception as err:
+            date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+            error_msg = (
+                "============= \n"
+                f"[{date_time}] Request for endpoint {endpoint} with params {params} failed"
+                f" with error \n{err}"
+                "============= \n"
+            )
+            print(error_msg)
+            data = [{}]
+
         return data
 
     def process(self, endpoint: str, **params) -> bool:
         default = {"fields": "*", "limit": 500, "offset": 0, "order": "updated_at:desc"}
         default.update(params)
 
+        start_time = datetime.now()
+
+        print(
+            f"[{start_time.strftime('%Y-%m-%d %H:%M:%S.%f')}] Start getting data for endpoint {endpoint}"
+        )
+
         while True:
             data = self.get_and_save(endpoint, default)
+            finish_time = datetime.now()
+            elapsed_time = round((finish_time - start_time).total_seconds() / 60, 2)
 
             try:
                 updated_timestamp = int(data[-1]["updated_at"])
-            except KeyError as err:
-                print(err)
-                print(data[-1].keys())
+                date_time = datetime.fromtimestamp(updated_timestamp).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                print(
+                    f"({date_time}) finished @ {finish_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    f" ({elapsed_time} minutes since begining)"
+                )
+            except KeyError:
                 updated_timestamp = int(datetime.now().timestamp()) - 100_000
+                print(f'Endpoint {endpoint} does not have "updated_at" field.')
 
             if (len(data) < 500) or (updated_timestamp < self.delay_timestamp):
+                print(
+                    f"[{finish_time.strftime('%Y-%m-%d %H:%M:%S.%f')}] Finished etting data for endpoint {endpoint}"
+                    f" ({elapsed_time} minutes since begining"
+                )
                 return True
 
             default["offset"] += default["limit"]

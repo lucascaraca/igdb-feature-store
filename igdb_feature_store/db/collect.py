@@ -1,6 +1,6 @@
 import os
 from typing import List
-from igdb_feature_store.db.ingestor import Ingestor, get_twitch_token
+from igdb_feature_store.db.ingestor import IGDBIngestor, get_twitch_token
 
 
 def collect_igdb_data(endpoints: List[str], delay: int):
@@ -11,11 +11,30 @@ def collect_igdb_data(endpoints: List[str], delay: int):
     db_home = os.environ["IGDB_DB_HOME"]
     path = f"{db_home}/raw"
 
-    ingestor = Ingestor(token=twitch_token, client_id=client_id, delay=delay, path=path)
+    ingestor = IGDBIngestor(
+        token=twitch_token, client_id=client_id, delay=delay, path=path
+    )
 
     for endpoint in endpoints:
         ingestor.process(endpoint=endpoint)
 
 
 if __name__ == "__main__":
-    collect_igdb_data(endpoints=["games"], delay=7)
+    endpoints = [
+        "characters",
+        "collections",
+        "companies",
+        "franchises",
+        "games",
+        "game_modes",
+        "game_versions",
+        "genres",
+        "languages",
+        "language_supports",
+        "platforms",
+        "platform_families",
+        "platform_versions",
+        "regions",
+        "themes",
+    ]
+    collect_igdb_data(endpoints=endpoints, delay=3450)
