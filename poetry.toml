@@ -1,0 +1,3 @@
+[virtualenvs]
+prompt = "{project_name}"
+in-project = true
